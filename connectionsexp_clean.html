@@ -1,0 +1,1347 @@
+<html>
+    <!--Filestart -->
+    <link rel="icon" type="image/vnd.microsoft.icon"  href="https://wilmabainbridge.com/research/wPaint-2.5.0/demo/img/favicon.ico" />
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Fileend -->
+
+    <!-- Some stylistic aspects -->
+    <style>
+    input[type="checkbox"]:checked + label img { 
+        border: 5px solid red;
+    }   
+    </style>
+
+
+    <body autocomplete="off">
+
+<form method = "post" autocomplete="off" action="processdata_connectionsclean.php" id="myForm"></form>
+
+
+<!--- Start the Javascript that does all the hard work! --->
+<script type="text/javascript">
+
+    // ----------------------------------------------------------------------------------------------------------------------
+    // Customizeable parameters //
+    var num_attempts_granted = 6; // Number of attempts allowed on a puzzle before moving on (default = 6) 
+    var num_puzzles = 7; // Number of TOTAL puzzles. Default is 1 practice puzzle + 6 test puzzles (7 puzzles total)
+    var waittime = 250; // Amount of time selected image is outlined before moving to next trial! Can make this 0 if you want to immediately move on
+    var preloadtime = 5000; // Amount of extra buffer time before beginning the experiment to ensure images have preloaded
+    var puzzletime = 3000; // Amount of time that must be spent on puzzle before next button enabled
+    var correcttime = 1000; // Amount of time that last category will be shown before moving onto next puzzle
+    // ----------------------------------------------------------------------------------------------------------------------
+
+
+    // Parameters set by the experimenter -- I wouldn't change these!
+    var imCount = -1; // Trial number that is being shown. Starts from -1 because of setTimeOut quirks
+    var attempts = 0; // Number of wrong choices
+    var groupsdone = ""; // Number of connections in a puzzle that are correct
+
+    // Output variables
+    var rawselection = "";
+    var selectedimgname = "";
+    var selectedimgtype = "";
+
+    var startTime = 0;
+    var endTime = 0;
+    var startClickTime = 0;
+    var endClickTime = 0;
+    var connectionTimes = "";
+    var connectionAcc = "";
+    var selectedword = "";
+    var allSelectedWords = [];
+    var mouseClick = [];
+    var clickTimes = "";
+
+    /*************************************************** Functions ****************************************************/
+
+    window.onload = function () {
+        buildStimSequence();
+    }
+
+    // Initialize stimuli sequences when the web page is done loading
+    function buildStimSequence() {
+        if (window.XMLHttpRequest) {
+            // Code for IE7+, Firefox, Chrome, Opera, Safari
+            xhttp = new XMLHttpRequest();
+            // An XMLHttpRequest object is created with the name "xhttp" and will be used for "talking with the server"
+        } else {
+            // Code for IE6, IE5r
+            xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+	
+        // Get new data from the database to load on the page
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200){ // Document done loading & success (vs 404 resource not found)
+
+                myObj = JSON.parse(this.responseText); // Parses string
+
+                // First separates imported data into variables
+                rowid = [myObj.rowid];
+                shuffledorder = [myObj.shuffledorder];
+                r1c1stim = [myObj.r1c1stim];
+                r1c2stim = [myObj.r1c2stim];
+                r1c3stim = [myObj.r1c3stim];
+                r1c4stim = [myObj.r1c4stim];
+                r2c1stim = [myObj.r2c1stim];
+                r2c2stim = [myObj.r2c2stim];
+                r2c3stim = [myObj.r2c3stim];
+                r2c4stim = [myObj.r2c4stim];
+                r3c1stim = [myObj.r3c1stim];
+                r3c2stim = [myObj.r3c2stim];
+                r3c3stim = [myObj.r3c3stim];
+                r3c4stim = [myObj.r3c4stim];
+                r4c1stim = [myObj.r4c1stim];
+                r4c2stim = [myObj.r4c2stim];
+                r4c3stim = [myObj.r4c3stim];
+                r4c4stim = [myObj.r4c4stim];
+                r1c1stimtype = [myObj.r1c1stimtype];
+                r1c2stimtype = [myObj.r1c2stimtype];
+                r1c3stimtype = [myObj.r1c3stimtype];
+                r1c4stimtype = [myObj.r1c4stimtype];
+                r2c1stimtype = [myObj.r2c1stimtype];
+                r2c2stimtype = [myObj.r2c2stimtype];
+                r2c3stimtype = [myObj.r2c3stimtype];
+                r2c4stimtype = [myObj.r2c4stimtype];
+                r3c1stimtype = [myObj.r3c1stimtype];
+                r3c2stimtype = [myObj.r3c2stimtype];
+                r3c3stimtype = [myObj.r3c3stimtype];
+                r3c4stimtype = [myObj.r3c4stimtype];
+                r4c1stimtype = [myObj.r4c1stimtype];
+                r4c2stimtype = [myObj.r4c2stimtype];
+                r4c3stimtype = [myObj.r4c3stimtype];
+                r4c4stimtype = [myObj.r4c4stimtype];
+
+                // Saves these variables
+                document.getElementById("rowidout").value = rowid;
+                document.getElementById("shuffledorderout").value = shuffledorder;
+
+                // Now splits variables at commas so can index each trial
+                shuffledorder = shuffledorder.toString().split(',');
+                r1c1stim = r1c1stim.toString().split(',');
+                r1c2stim = r1c2stim.toString().split(',');
+                r1c3stim = r1c3stim.toString().split(',');
+                r1c4stim = r1c4stim.toString().split(',');
+                r2c1stim = r2c1stim.toString().split(',');
+                r2c2stim = r2c2stim.toString().split(',');
+                r2c3stim = r2c3stim.toString().split(',');
+                r2c4stim = r2c4stim.toString().split(',');
+                r3c1stim = r3c1stim.toString().split(',');
+                r3c2stim = r3c2stim.toString().split(',');
+                r3c3stim = r3c3stim.toString().split(',');
+                r3c4stim = r3c4stim.toString().split(',');
+                r4c1stim = r4c1stim.toString().split(',');
+                r4c2stim = r4c2stim.toString().split(',');
+                r4c3stim = r4c3stim.toString().split(',');
+                r4c4stim = r4c4stim.toString().split(',');
+                r1c1stimtype = r1c1stimtype.toString().split(',');
+                r1c2stimtype = r1c2stimtype.toString().split(',');
+                r1c3stimtype = r1c3stimtype.toString().split(',');
+                r1c4stimtype = r1c4stimtype.toString().split(',');
+                r2c1stimtype = r2c1stimtype.toString().split(',');
+                r2c2stimtype = r2c2stimtype.toString().split(',');
+                r2c3stimtype = r2c3stimtype.toString().split(',');
+                r2c4stimtype = r2c4stimtype.toString().split(',');
+                r3c1stimtype = r3c1stimtype.toString().split(',');
+                r3c2stimtype = r3c2stimtype.toString().split(',');
+                r3c3stimtype = r3c3stimtype.toString().split(',');
+                r3c4stimtype = r3c4stimtype.toString().split(',');
+                r4c1stimtype = r4c1stimtype.toString().split(',');
+                r4c2stimtype = r4c2stimtype.toString().split(',');
+                r4c3stimtype = r4c3stimtype.toString().split(',');
+                r4c4stimtype = r4c4stimtype.toString().split(',');
+            }
+        }
+
+        xhttp.open("GET", "https://emmameglaserver.com/research/aphan-connections/connections_stim.php", true);
+        xhttp.send();
+        }
+      
+        function buttonPress() {
+            // Get pages set up & give time to preload the image
+            document.getElementById("startbutton").hidden = true; // disable the Start Button once started
+            document.getElementById("exampleText").hidden = true;
+            document.getElementById("mainTaskWindow").hidden = true;
+
+            // Now preload the images
+            preloadStim();
+        }
+
+        function preloadStim(){
+            // Waits a few seconds to ensure images load
+            $("input[name=consent]").prop("checked",false); // Unchecking box in consent form in case its causing problems
+            setTimeout("showStim()", preloadtime);
+            document.getElementById("preloadScreen").hidden = false;
+        }
+
+        function wait(){
+            // Outlines the image in red for the time set.
+            // Note: this works because it provides a delay between selection and the next trial. If this is 0, then there will be no outline.
+            setTimeout("showStim()", waittime);
+        }
+
+        function showStim() {
+            // Saves the previous trial's response and shows the next set of images
+            document.getElementById("mainTaskWindow").hidden = false;
+            document.getElementById("submitwarning").hidden = false;
+            document.getElementById("submitbutton").hidden = false;
+            document.getElementById("preloadScreen").hidden = true;
+            document.getElementById("attemptCount").innerHTML = 6;
+            var d = new Date(); // Gets current time
+                startTime = d.getTime(); // Measures difference in time from 1970 to current time in ms
+            var c = new Date(); // Gets current time
+                startClickTime = c.getTime(); // Measures difference in time from 1970 to current time in ms
+
+            imCount++; // Increments trial count
+            attempts = 0; // Resets attempts
+            groupsdone = ""; // Resets categories correct
+            correctnum = 0; // Resets title id
+
+            allSelectedWords = [allSelectedWords + '!'];
+
+            if (imCount == num_puzzles) { // If it's the last trial, ends the experiment
+                next();
+                return;
+            }
+            // Unselects images
+            $("input[name=stimulus]").prop("checked",false);   
+
+            // Assigns the images for the trial
+            document.getElementById("r1c1_stimulus").src = r1c1stim[imCount];
+            document.getElementById("r1c2_stimulus").src = r1c2stim[imCount];
+            document.getElementById("r1c3_stimulus").src = r1c3stim[imCount];
+            document.getElementById("r1c4_stimulus").src = r1c4stim[imCount];
+            document.getElementById("r2c1_stimulus").src = r2c1stim[imCount];
+            document.getElementById("r2c2_stimulus").src = r2c2stim[imCount];
+            document.getElementById("r2c3_stimulus").src = r2c3stim[imCount];
+            document.getElementById("r2c4_stimulus").src = r2c4stim[imCount];
+            document.getElementById("r3c1_stimulus").src = r3c1stim[imCount];
+            document.getElementById("r3c2_stimulus").src = r3c2stim[imCount];
+            document.getElementById("r3c3_stimulus").src = r3c3stim[imCount];
+            document.getElementById("r3c4_stimulus").src = r3c4stim[imCount];
+            document.getElementById("r4c1_stimulus").src = r4c1stim[imCount];
+            document.getElementById("r4c2_stimulus").src = r4c2stim[imCount];
+            document.getElementById("r4c3_stimulus").src = r4c3stim[imCount];
+            document.getElementById("r4c4_stimulus").src = r4c4stim[imCount];
+
+            // Assigns white squares to title boxes until connections answered correctly
+            document.getElementById("T1").src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg"
+            document.getElementById("T2").src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg"
+            document.getElementById("T3").src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg"
+            document.getElementById("T4").src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg"
+        }
+
+        function checkLength() {
+        // Checks if they've selected enough words to check puzzle
+            
+            if (document.querySelectorAll('input[type="checkbox"]:checked').length == 4){
+                document.getElementById("checkbutton").disabled = false;
+            } else {
+                document.getElementById("checkbutton").disabled = true;
+            }
+            // Records mouse clicks and times (by connection and puzzle)
+            const checked = document.querySelectorAll('input[type="checkbox"]:checked')
+            selected = Array.from(checked).map(x => x.value)
+            mouseClick = [mouseClick + '-' + selected];
+            document.getElementById("mouseClickout").value = mouseClick;
+            var c = new Date();
+                endClickTime = c.getTime();
+            let val = endClickTime - startClickTime;
+            let val2string = val.toString();
+            clickTimes = [clickTimes + ',' + val2string];
+            document.getElementById("clickTimesout").value = clickTimes;
+            var c = new Date();
+                startClickTime = c.getTime();
+        }
+
+        function checkPuzzle() {
+            // Gets time taken to complete each connection
+            var d = new Date();
+                endTime = d.getTime();
+            let num = endTime - startTime;
+            let num2string = num.toString();
+            connectionTimes = [connectionTimes + ',' + num2string];
+            document.getElementById("connectionTimesout").value = connectionTimes;
+            var d = new Date();
+                startTime = d.getTime();
+            
+            // Checks which tiles are selected and stores tile as member of puzzle number
+            const checked = document.querySelectorAll('input[type="checkbox"]:checked')
+            selected = Array.from(checked).map(x => x.value)
+            let v = 0;
+            var puzzletype = [];
+            for (let i = 0; i < 4; i++) {
+                stimulus = selected[i]
+                if(stimulus == "r1c1stimtype") {
+                    puzzletype.push(r1c1stimtype[imCount])
+                    selectedword = document.getElementById("r1c1_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r1c2stimtype") {
+                    puzzletype.push(r1c2stimtype[imCount])
+                    selectedword = document.getElementById("r1c2_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r1c3stimtype") {
+                    puzzletype.push(r1c3stimtype[imCount])
+                    selectedword = document.getElementById("r1c3_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r1c4stimtype") {
+                    puzzletype.push(r1c4stimtype[imCount])
+                    selectedword = document.getElementById("r1c4_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r2c1stimtype") {
+                    puzzletype.push(r2c1stimtype[imCount])
+                    selectedword = document.getElementById("r2c1_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r2c2stimtype") {
+                    puzzletype.push(r2c2stimtype[imCount])
+                    selectedword = document.getElementById("r2c2_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r2c3stimtype") {
+                    puzzletype.push(r2c3stimtype[imCount])
+                    selectedword = document.getElementById("r2c3_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r2c4stimtype") {
+                    puzzletype.push(r2c4stimtype[imCount])
+                    selectedword = document.getElementById("r2c4_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r3c1stimtype") {
+                    puzzletype.push(r3c1stimtype[imCount])
+                    selectedword = document.getElementById("r3c1_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r3c2stimtype") {
+                    puzzletype.push(r3c2stimtype[imCount])
+                    selectedword = document.getElementById("r3c2_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r3c3stimtype") {
+                    puzzletype.push(r3c3stimtype[imCount])
+                    selectedword = document.getElementById("r3c3_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r3c4stimtype") {
+                    puzzletype.push(r3c4stimtype[imCount])
+                    selectedword = document.getElementById("r3c4_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r4c1stimtype") {
+                    puzzletype.push(r4c1stimtype[imCount])
+                    selectedword = document.getElementById("r4c1_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r4c2stimtype") {
+                    puzzletype.push(r4c2stimtype[imCount])
+                    selectedword = document.getElementById("r4c2_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r4c3stimtype") {
+                    puzzletype.push(r4c3stimtype[imCount])
+                    selectedword = document.getElementById("r4c3_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                } if(stimulus == "r4c4stimtype") {
+                    puzzletype.push(r4c4stimtype[imCount])
+                    selectedword = document.getElementById("r4c4_stimulus").src
+                    wordname = selectedword.replaceAll('http://emmameglaserver.com/research/aphan-connections/','');
+                    allSelectedWords.push(wordname)
+                }
+            }
+            var unique = puzzletype.filter((value, index, array) => array.indexOf(value) === index);
+            allSelectedWords = [allSelectedWords + '-'];
+            document.getElementById("allSelectedWordsout").value = allSelectedWords;
+            mouseClick = [mouseClick + '~'];
+            document.getElementById("mouseClickout").value = mouseClick;
+            clickTimes = [clickTimes + '~'];
+            document.getElementById("clickTimesout").value = clickTimes;
+
+            // If connection is correct, changes tile into colored version
+            if(unique.length == 1) {
+                connectionAcc = [connectionAcc + ',' + unique];
+                document.getElementById("connectionAccout").value = connectionAcc;
+                for (let i = 0; i < 4; i++) {
+                stimulus = selected[i]
+                if(stimulus == "r1c1stimtype") {
+                    colorStim = "C_" + r1c1stim[imCount]
+                    document.getElementById("r1c1_stimulus").src = colorStim
+                }
+                if(stimulus == "r1c2stimtype") {
+                    colorStim = "C_" + r1c2stim[imCount]
+                    document.getElementById("r1c2_stimulus").src = colorStim
+                }
+                if(stimulus == "r1c3stimtype") {
+                    colorStim = "C_" + r1c3stim[imCount]
+                    document.getElementById("r1c3_stimulus").src = colorStim
+                }
+                if(stimulus == "r1c4stimtype") {
+                    colorStim = "C_" + r1c4stim[imCount]
+                    document.getElementById("r1c4_stimulus").src = colorStim
+                }
+                if(stimulus == "r2c1stimtype") {
+                    colorStim = "C_" + r2c1stim[imCount]
+                    document.getElementById("r2c1_stimulus").src = colorStim
+                }
+                if(stimulus == "r2c2stimtype") {
+                    colorStim = "C_" + r2c2stim[imCount]
+                    document.getElementById("r2c2_stimulus").src = colorStim
+                }
+                if(stimulus == "r2c3stimtype") {
+                    colorStim = "C_" + r2c3stim[imCount]
+                    document.getElementById("r2c3_stimulus").src = colorStim
+                }
+                if(stimulus == "r2c4stimtype") {
+                    colorStim = "C_" + r2c4stim[imCount]
+                    document.getElementById("r2c4_stimulus").src = colorStim
+                }
+                if(stimulus == "r3c1stimtype") {
+                    colorStim = "C_" + r3c1stim[imCount]
+                    document.getElementById("r3c1_stimulus").src = colorStim
+                }
+                if(stimulus == "r3c2stimtype") {
+                    colorStim = "C_" + r3c2stim[imCount]
+                    document.getElementById("r3c2_stimulus").src = colorStim
+                }
+                if(stimulus == "r3c3stimtype") {
+                    colorStim = "C_" + r3c3stim[imCount]
+                    document.getElementById("r3c3_stimulus").src = colorStim
+                }
+                if(stimulus == "r3c4stimtype") {
+                    colorStim = "C_" + r3c4stim[imCount]
+                    document.getElementById("r3c4_stimulus").src = colorStim
+                }
+                if(stimulus == "r4c1stimtype") {
+                    colorStim = "C_" + r4c1stim[imCount]
+                    document.getElementById("r4c1_stimulus").src = colorStim
+                }
+                if(stimulus == "r4c2stimtype") {
+                    colorStim = "C_" + r4c2stim[imCount]
+                    document.getElementById("r4c2_stimulus").src = colorStim
+                }
+                if(stimulus == "r4c3stimtype") {
+                    colorStim = "C_" + r4c3stim[imCount]
+                    document.getElementById("r4c3_stimulus").src = colorStim
+                }
+                if(stimulus == "r4c4stimtype") {
+                    colorStim = "C_" + r4c4stim[imCount]
+                    document.getElementById("r4c4_stimulus").src = colorStim
+                }
+            
+                // Gets which connection number from puzzle they got correct
+                while (v == 0) {
+                    if (groupsdone.length == 0) {
+                        groupsdone = unique
+                        v = 3;
+                    } else {
+                        groupsdone = [groupsdone + ',' + unique]
+                        v = 5;
+                    }
+                }
+
+                groupsdone = String(groupsdone);
+    
+                // Gets category name for connection and changes title tile to colored version
+                catURL = ["T_p" + shuffledorder[imCount] + "g" + unique + ".jpg"]
+                correctnum = (groupsdone.split(',')).length;
+                titleidname = ["T" + correctnum]
+                document.getElementById(titleidname).src = catURL
+                $("input[name=stimulus]").prop("checked",false);
+            } if (correctnum == 4) {
+                    setTimeout("nextPuzzle()", correcttime);
+            }
+            } else { 
+                // If connection is incorrect, updates attempt number
+                connectionAcc = [connectionAcc + ',0'];
+                document.getElementById("connectionAccout").value = connectionAcc;
+                $("input[name=stimulus]").prop("checked",false);
+                attempts = attempts + 1
+                document.getElementById("attemptCount").innerHTML = 6 - attempts;
+
+                if (attempts < num_attempts_granted) {
+                    alert("Incorrect attempt!")
+                } else if (attempts == num_attempts_granted) {
+                    if (imCount == 0) {
+                        alert("You used up all of your attempts for this practice trial! Please note you will have the same number of attempts for the experiment trials. You will now begin the experiment!")
+                    } else if (imCount == 6) {
+                        alert("You used up all of your attempts for this puzzle! Please move on the survey section of this experiment.")
+                    } else {
+                        alert("You used up all of your attempts for this puzzle! Please begin the next one.")
+                    }
+
+                    connectionTimes = [connectionTimes + ',!'];
+                    document.getElementById("connectionTimesout").value = connectionTimes;
+                    connectionAcc = [connectionAcc + ',!'];
+                    document.getElementById("connectionAccout").value = connectionAcc;
+                    document.getElementById("allSelectedWordsout").value = allSelectedWords;
+                    mouseClick = [mouseClick + ',!'];
+                    document.getElementById("mouseClickout").value = mouseClick;
+                    clickTimes = [clickTimes + ',!'];
+                    document.getElementById("clickTimesout").value = clickTimes;
+                    showStim();
+                }
+            }
+        }
+
+        function nextPuzzle() {
+            // Moves experiment onto next section
+            if (imCount == 0) {
+                alert ("Well done! You completed the practice trial! You will now begin the experiment.")
+            } else if (imCount == 6) {
+                alert ("Well done! You completed the puzzle! Please move on the survey section of this experiment.")
+            } else {
+                alert ("Well done! You completed the puzzle! Please begin the next one.")
+            }
+            connectionTimes = [connectionTimes + ',!'];
+            document.getElementById("connectionTimesout").value = connectionTimes;
+            connectionAcc = [connectionAcc + ',!'];
+            document.getElementById("connectionAccout").value = connectionAcc;
+            document.getElementById("allSelectedWordsout").value = allSelectedWords;
+            mouseClick = [mouseClick + ',!'];
+            document.getElementById("mouseClickout").value = mouseClick;
+            clickTimes = [clickTimes + ',!'];
+            document.getElementById("clickTimesout").value = clickTimes;
+            showStim();
+        }
+
+        function showOsiq() {
+            // Shows OSIQ questionnaire
+            next();
+        }
+        
+        function showFinalQ() {
+            // Shows final questionnaire
+            next();
+        }
+
+        function showEnding() {
+        // Ends the study if they make it to the end
+            next();
+            document.getElementById("performancerecord").innerHTML = "Press the <b>SUBMIT</b> button to get credit for the task.<br>";
+            document.getElementById("submitbutton").hidden = false;
+            document.getElementById("submitwarning").hidden = true;
+            document.getElementById("mainTaskWindow").hidden = true;
+            document.getElementById("finalquestion").hidden = true;
+            // Assigns last variables
+            document.getElementById("connectionTimesout").value = connectionTimes;
+            document.getElementById("connectionAccout").value = connectionAcc;
+            document.getElementById("allSelectedWordsout").value = allSelectedWords;
+            document.getElementById("mouseClickout").value = mouseClick;
+            document.getElementById("clickTimesout").value = clickTimes;
+        }
+
+        function submit() {
+        // Submits form!
+            document.getElementById("connectionTimesout").value = connectionTimes;
+            document.getElementById("connectionAccout").value = connectionAcc;
+            document.getElementById("allSelectedWordsout").value = allSelectedWords;
+            document.getElementById("mouseClickout").value = mouseClick;
+            document.getElementById("clickTimesout").value = clickTimes;
+            document.getElementById("myForm").submit();
+        }
+
+        /*************************************** General useful functions **********************************************/
+
+            // Populates an array
+            function populateArray(start, end) {
+                array = [];
+                for (var i = start; i < end; i++) {
+                    array[i] = i;
+                }
+                return array;
+            }
+
+            // Shuffles an array
+            function shuffleArray(array) {
+                for (var i = array.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+                return array;
+            }
+
+            // Shuffles multiple arrays with the same ordering (must all be same length)
+            function shuffleArrays(arrays) {
+                for (var i = arrays[0].length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    for (var an = 0; an < arrays.length; an++) {
+                        var temp = arrays[an][i];
+                        arrays[an][i] = arrays[an][j];
+                        arrays[an][j] = temp;
+                    }
+                }
+                return arrays;
+            }
+
+            // Counts the number of occurrences of a value in an array
+            function countOccurences(array, value) {
+                var counter = 0;
+                for (var i = 0; i < array.length; i++) {
+                    if (array[i] == value) {
+                        counter++;
+                    }
+                }
+                return counter;
+            }
+        </script>
+        <form method = "post" autocomplete="off" action="processdata_connectionsclean.php" id="myForm">
+        
+        
+        <!--- These are the hidden variables that get outputted --->
+        <input type="hidden" name="rowid" id="rowidout" value="">
+        <input type="hidden" name="shuffledorder" id="shuffledorderout" value="">
+        <input type="hidden" name="ip" id="ipout" value="">
+        <!--- Demographic variables + vviq values --->
+        <input type="hidden" name="age" id="ageout" value="">
+        <input type="hidden" name="gender" id="genderout" value="">
+        <input type="hidden" name="race" id="raceout" value="">
+        <input type="hidden" name="ethnicity" id="ethnicityout" value="">
+        <input type="hidden" name="fluent" id="fluentout" value="">
+        <input type="hidden" name="month" id="monthout" value="">
+        <input type="hidden" name="pennies" id="penniesout" value="">
+        <input type="hidden" name="pid" id="pidout" value="">
+        <input type="hidden" name="anid" id="anidout" value="">
+        <input type="hidden" name="vviq" id="vviqvals" value="">
+        <input type="hidden" name="osiq" id="osiqvals" value="">
+        <input type="hidden" name="recontact" id="recontactout" value="">
+        <!--- Final Questions variables --->
+        <input type="hidden" name="finalQ" id="finalQout" value="">
+        <input type="hidden" name="finalQ2" id="finalQ2out" value="">
+        <input type="hidden" name="finalQ3" id="finalQ3out" value="">
+        <input type="hidden" name="finalQ4" id="finalQ4out" value="">
+        <!--- Performance variables --->
+        <input type="hidden" name="connectionTimes" id="connectionTimesout" value="">
+        <input type="hidden" name="connectionAcc" id="connectionAccout" value="">
+        <input type="hidden" name="allSelectedWords" id="allSelectedWordsout" value="">
+        <input type="hidden" name="mouseClick" id="mouseClickout" value="">
+        <input type="hidden" name="clickTimes" id="clickTimesout" value="">
+        
+        <!-- Records ip address -->
+        <script type="text/javascript">
+        var userip;
+        </script>
+        <script type="text/javascript" src="https://l2.io/ip.js?var=userip"></script>
+        <script type="text/javascript">
+        document.getElementById("ipout").setAttribute('value', userip);
+        </script>
+
+        <!-- Introduction -->
+        <div id="intro">
+        <center>
+            <h1>Welcome!</h1>
+            <p>In this experiment, we will test your ability to make connections in puzzles.</p>
+            <p>
+            This task will take around <strong>40 minutes</strong>.
+            <p>
+            <input name="consent" type="checkbox" onclick="enableNext()"> <strong style="font-size:16px">I agree to participate in the research</strong></input>
+            </p>
+            <br>
+            <input type="button" class="next" onclick="next()" value="Next" id="nextbutton" disabled="true"></input>
+        </center>
+        </div>
+
+<!-- Demographics -->
+<div id="demographics" style="display: none" class = "center">
+<center>
+    <b><h3>Please answer the following questions.</h3></b>
+    <br>
+    
+    <b>What is your email?</b>&nbsp;&nbsp;<input type="text" name="pid"><br /> 
+    We will only use this email to provide compensation upon completion of this study.
+    <br>
+    <br>
+    <b>What is your Aphantasia Network ID?</b>&nbsp;&nbsp;<input type="text" name="anid"><br /> <!-- Optional question -->
+    <br>
+    <hr>
+    <b>Would you like to be contacted by our lab for participation in future studies?</b>&nbsp;&nbsp;<label><input name="recontact" type="radio" value="yes"> Yes</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="recontact" type="radio" value="no"> No</label>
+    <br>
+    <br>
+    <b>What is your age?</b>&nbsp;&nbsp;<input type="text" name="age"><br /><br>
+    
+    <b>What is your gender?</b>&nbsp;&nbsp;<label><input name="gender" type="radio" value="female"> Female</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="gender" type="radio" value="male"> Male</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="gender" type="radio" value="na"> Other/Prefer not to answer</label><br /><br>
+    
+    <b>What is your race?</b>&nbsp;&nbsp;
+    <select name="race">
+    <option value="blank">Select Option</option>
+    <option value="nativeamerican">American Indian/Native American</option>
+    <option value="asian">Asian</option>
+    <option value="pacificislander">Native Hawaiian/Pacific Islander</option>
+    <option value="black">Black/African American</option>
+    <option value="white">White</option>
+    <option value="multiracial">More than one race</option>
+    <option value="na">Prefer not to answer</option>
+    </select>
+    <br><br>
+    
+    <b>What is your ethnicity?</b>&nbsp;&nbsp;<input name="ethnicity" type="radio" value="Hispanic/Latinx"> Hispanic/Latinx &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <input name="ethnicity" type="radio" value="Not Hispanic/Latinx"> Not Hispanic/Latinx<br><br>
+
+    <b>Are you fluent in English and do you currently reside in the US?</b>&nbsp;&nbsp;<label><input name="fluent" type="radio" value="both"> Yes, both</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="fluent" type="radio" value="english"> I am fluent in English but don't reside in the US</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="fluent" type="radio" value="liveinus"> I reside in the US but am not fluent in English</label> &nbsp;&nbsp;<label><input name="fluent" type="radio" value="neither"> No, neither</label><br /><br>
+    
+    <b>What month is American Independence Day in?</b>&nbsp;&nbsp;
+    <select name="month" id="monthout">
+    <option value="blank">Select Option</option>
+    <option value="1">January</option>
+    <option value="2">February</option>
+    <option value="3">March</option>
+    <option value="4">April</option>
+    <option value="5">May</option>
+    <option value="6">June</option>
+    <option value="7">July</option>
+    <option value="8">August</option>
+    <option value="9">September</option>
+    <option value="10">October</option>
+    <option value="11">November</option>
+    <option value="12">December</option>
+    </select>
+    <br><br>
+    
+    <b>How many pennies are there in one dollar? </b>&nbsp;&nbsp;<input type="text" name="pennies" id="penniesout" oninput="enableNextD()"> 
+    <br><br><br>
+    <input type="button" class="next" onclick="next()" value="Next" id="nextbuttonD" disabled="true"></input>
+</center>
+</div>
+
+<!-- Preload Screen -->
+<div id="preloadScreen" style="font-size: 20px;" hidden>
+    <br><br><br>
+    <center>
+        Loading images, please wait...
+     </center>
+</div>
+
+<!-- Experiment --> 
+<div id="exp" style="display: none">
+    <center>
+         
+        <!-- Instructions Page -->
+        <span id = "exampleText" style="font-size: 20px;">
+            <center>
+            <h2>Instructions!</h2>
+            For each set of images, you will find <b>4 groups of 4 connected words</b>. 
+            <br>
+            Please click to select <b>4 words</b> that share something in common. 
+            <br>
+            Then click '<b>Submit</b>' to check if your guess is correct, and move onto the next group. If your guess is correct, the category name for that connection will appear.
+            <br><br>
+            Below is an example of 4 connected words:
+            <br><br><img src = "https://emmameglaserver.com/research/aphan-connections/instructionsimage.jpg" width="1200">
+            <br><br>
+            Please note that you can only make 6 mistakes before moving onto the next set.
+            <br>
+            Each puzzle has exactly one solution, so watch out for words that could belong to multiple categories!
+            <br>
+            <b>You will now begin a practice trial where you will be asked to complete a single puzzle! After you have completed the practice trial, you will immediately begin the experiment!</b>
+            </center>
+        </span>
+
+        <!-- Main Task Window -->
+        <span id = "mainTaskWindow" style="font-size: 20px;" hidden>
+            <center>
+                <h2>Instructions</h2>
+                For each set of images, you will find <b>4 groups of 4 connected words</b>. 
+                <br>
+                Please click to select <b>4 words</b> that share something in common. 
+                <br>
+                Then click '<b>Submit</b>' to check if your guess is correct, and move onto the next group.
+                <br><br>
+                <input type="checkbox" value="r1c1stimtype" id="Img1" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img1"><img id = "r1c1_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r1c2stimtype" id="Img2" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img2"><img id = "r1c2_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r1c3stimtype" id="Img3" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img3"><img id = "r1c3_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r1c4stimtype" id="Img4" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img4"><img id = "r1c4_stimulus" src = '' height="100px" width = "150px"></label>
+                <img width="75px" src = "https://emmameglaserver.com/research/aphan-connections/space.jpg">
+                <img id="T1" src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg" width="150px">
+                <br>
+                <input type="checkbox" value="r2c1stimtype" id="Img5" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img5"><img id = "r2c1_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r2c2stimtype" id="Img6" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img6"><img id = "r2c2_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r2c3stimtype" id="Img7" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img7"><img id = "r2c3_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r2c4stimtype" id="Img8" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img8"><img id = "r2c4_stimulus" src = '' height="100px" width = "150px"></label>
+                <img width="75px" src = "https://emmameglaserver.com/research/aphan-connections/space.jpg">
+                <img id="T2" src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg" width="150px">
+                <br>
+                <input type="checkbox" value="r3c1stimtype" id="Img9" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img9"><img id = "r3c1_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r3c2stimtype" id="Img10" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img10"><img id = "r3c2_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r3c3stimtype" id="Img11" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img11"><img id = "r3c3_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r3c4stimtype" id="Img12" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img12"><img id = "r3c4_stimulus" src = '' height="100px" width = "150px"></label>
+                <img width="75px" src = "https://emmameglaserver.com/research/aphan-connections/space.jpg">
+                <img id="T3" src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg" width="150px">
+                <br>
+                <input type="checkbox" value="r4c1stimtype" id="Img13" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img13"><img id = "r4c1_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r4c2stimtype" id="Img14" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img14"><img id = "r4c2_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r4c3stimtype" id="Img15" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img15"><img id = "r4c3_stimulus" src = '' height="100px" width = "150px"></label>
+                <input type="checkbox" value="r4c4stimtype" id="Img16" style="display: none;" name = "stimulus" onclick="checkLength()"><label for="Img16"><img id = "r4c4_stimulus" src = '' height="100px" width = "150px"></label>
+                <img width="75px" src = "https://emmameglaserver.com/research/aphan-connections/space.jpg">
+                <img id="T4" src = "https://emmameglaserver.com/research/aphan-connections/T_blank.jpg" width="150px">
+                <br><br>
+            </center>
+            <input type="button" class="check" onclick="checkPuzzle()" value="Check Puzzle" id="checkbutton" disabled="true"></input>
+            <br>
+            <br>
+            Attempts left:
+            <span id="attemptCount"></span>
+            <br><br>
+        </span>
+        <span id="performancerecord"></span>
+        <br>
+        <h7>
+            <button type="button" id="startbutton" onclick="buttonPress()" autocomplete="off" style="border: 1px solid black; height:70; width:250; border-radius:12px">Click to Start</button>
+
+        </h7>
+        <br>
+        <span id="submitwarning" hidden>
+            <hr>  <!-- This draws a horizontal line -->
+            <b>Click below to submit your data.</b>
+            Only submit when completed! If you decide to stop halfway, you can click this to end.<br>
+            <br>
+        </span>
+        <input type="submit" class="submitbutt" id="submitbutton" name="Submit HIT" value="SUBMIT" onclick="submit" hidden>
+</div>
+</center>
+
+<div id="vviq" style="display: none" style="font-family:helvetica">
+    <br>
+    <center>
+    <h2>Vividness of Visual Imagery Questionnaire</h2><br>
+    For each item on this questionnaire, try to form a visual image, and consider your experience carefully. Please note that there are no right or wrong answers to the questions, and that it is not necessarily desirable to experience imagery or, if you do, to have more vivid imagery.<br>
+    </center>
+    <hr>  <!-- This draws a horizontal line -->
+    <span style="margin-left:100px;margin-right:100px">
+    <br><br>
+    
+    <!-- Now ask all VVIQ Questions -->
+    <br><br><font size="+1">
+    Think of some relative or friend whom you frequently see (but who is not with you at present), and consider carefully the picture that comes before your mind's eye. Then rate the following items: </font><br><br><br>
+    
+    <b>The exact contours of face, head, shoulders, and body.</b>
+    <br><br><label><input name="vviq1" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq1" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq1" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq1" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq1" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>Characteristic poses of head, attitudes of body, etc.</b>
+    <br><br><label><input name="vviq2" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq2" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq2" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq2" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq2" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    
+    <b>The precise carriage, length of step, etc., in walking.</b>
+    <br><br><label><input name="vviq3" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq3" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq3" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq3" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq3" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>The different colors worn in some familiar clothes.</b>
+    <br><br><label><input name="vviq4" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq4" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq4" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq4" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq4" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <br><br><font size="+1">
+    Visualize a rising sun. Consider carefully the picture that comes before your mind's eye. Then rate the following items: </font><br><br><br>
+    
+    <b>The sun is rising above the horizon into a hazy sky.</b>
+    <br><br><label><input name="vviq5" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq5" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq5" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq5" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq5" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>The sky clears and surrounds the sun with blueness.</b>
+    <br><br><label><input name="vviq6" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq6" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq6" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq6" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq6" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>Clouds. A storm blows up, with flashes of lightening.</b>
+    <br><br><label><input name="vviq7" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq7" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq7" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq7" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq7" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>A rainbow appears.</b>
+    <br><br><label><input name="vviq8" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq8" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq8" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq8" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq8" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <br><br><font size="+1">
+    Think of the front of a shop to which you often go. Consider the picture that comes before your mind's eye. Then rate the following items: </font><br><br><br>
+    
+    <b>The overall appearance of the shop from the opposite side of the road.</b>
+    <br><br><label><input name="vviq9" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq9" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq9" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq9" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq9" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>A window display including colors, shapes, and details of individual items for sale.</b>
+    <br><br><label><input name="vviq10" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq10" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq10" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq10" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq10" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>You are near the entrace. The color, shape, and details of the door.</b>
+    <br><br><label><input name="vviq11" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq11" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq11" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq11" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq11" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>You enter the shop and go to the counter. The counter assistant serves you. Money changes hands.</b>
+    <br><br><label><input name="vviq12" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq12" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq12" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq12" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq12" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <br><br><font size="+1">
+    Finally, think of a country scene which involves trees, mountains, and a lake. Consider the picture that comes before your mind's eye. Then rate the following items: </font><br><br><br>
+    
+    <b>The contours of the landscape.</b>
+    <br><br><label><input name="vviq13" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq13" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq13" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq13" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq13" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>The color and shape of the trees.</b>
+    <br><br><label><input name="vviq14" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq14" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq14" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq14" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq14" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>The color and shape of the lake.</b>
+    <br><br><label><input name="vviq15" type="radio" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq15" type="radio" value="2" /> Vague, and dim</label><br><br><label><input name="vviq15" type="radio" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq15" type="radio" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq15" type="radio" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <b>The strong wind blows on the trees and on the lake, causing waves.</b>
+    <br><br><label><input name="vviq16" type="radio" onclick="enableNext3()" value="1" /> No image at all (only "knowing" that you are thinking of the object)</label> <br><br><label><input name="vviq16" type="radio" onclick="enableNext3()" value="2" /> Vague, and dim</label><br><br><label><input name="vviq16" type="radio" onclick="enableNext3()" value="3" /> Moderately clear and vivid</label><br><br><label><input name="vviq16" type="radio" onclick="enableNext3()" value="4" /> Clear and reasonably vivid</label><br><br><label><input name="vviq16" type="radio" onclick="enableNext3()" value="5" /> Perfectly clear and as vivid as normal vision</label><br/><br><br><br>
+    
+    <br><br>
+    <input type="button" class="next" onclick="GetVviq(16)" value="Next" id="nextbutton3" disabled="true"></input>
+    </font></span></div>
+
+<!-- OSIQ -->
+<div id="osiq" style="display: none" style="font-family:helvetica">
+    <br>
+    <span style="font-family:helvetica">
+    <br>
+    <center>
+    <h2>Object-Spatial Imagery Questionnaire</h2><br>
+    Please indicate how much the following statements describe you.<br>
+    </center>
+    <hr>  <!-- This draws a horizontal line -->
+    <span style="margin-left:100px;margin-right:100px">
+    <br><br>
+
+<!-- Now ask all OSIQ Questions -->
+<br><br>
+<b>1:</b> I was very good in 3-D geometry as a student.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq1" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq1" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq1" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq1" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq1" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>2:</b> If I were asked to choose between engineering professions and visual arts, I would prefer engineering.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq2" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq2" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq2" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq2" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq2" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>3:</b> Architecture interests me more than painting.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq3" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq3" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq3" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq3" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq3" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>4:</b> My images are very colourful and bright.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq4" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq4" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq4" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq4" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq4" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+
+<b>5:</b> I prefer schematic diagrams and sketches when reading a textbook instead of colourful and pictorial illustrations.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq5" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq5" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq5" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq5" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq5" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>6:</b> My images are more like schematic representations of things and events rather than detailed pictures.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq6" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq6" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq6" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq6" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq6" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+
+<b>7:</b> When reading fiction, I usually form a clear and detailed mental picture of a scene or room that has been described.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq7" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq7" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq7" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq7" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq7" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>8:</b> I have a photographic memory.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq8" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq8" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq8" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq8" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq8" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>9:</b> I can easily imagine and mentally rotate 3-dimensional geometric figures.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq9" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq9" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq9" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq9" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq9" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>10:</b> When entering a familiar store to get a specific item, I can easily picture the exact location of the target item, the shelf it stands on, how it is arranged, and the surrounding articles.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq10" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq10" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq10" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq10" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq10" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>11:</b> I normally do not experience many spontaneous vivid images; I use my mental imagery mostly when attempting to solve some problems like the ones in mathematics.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq11" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq11" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq11" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq11" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq11" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>12:</b> My images are very vivid and photographic.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq12" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq12" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq12" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq12" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq12" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>13:</b> I can easily sketch a blueprint for a building that I am familiar with.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq13" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq13" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq13" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq13" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq13" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>14:</b> I am a good Tetris player.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq14" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq14" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq14" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq14" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq14" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>15:</b> If I were asked to choose between studying architecture and visual arts, I would choose visual arts.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq15" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq15" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq15" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq15" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq15" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>16:</b> My mental images of different objects very much resemble the size, shape and colour of actual objects that I have seen.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq16" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq16" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq16" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq16" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq16" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>17:</b> When I imagine the face of a friend, I have a perfectly clear and bright image.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq17" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq17" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq17" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq17" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq17" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>18:</b> I have excellent abilities in technical graphics.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq18" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq18" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq18" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq18" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq18" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>19:</b> I can easily remember a great deal of visual details that someone else might never notice. For example, I would just automatically take some things in, like what colour is a shirt someone wears or what colour are his/her shoes.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq19" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq19" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq19" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq19" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq19" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>20:</b> In high school, I had less difficulty with geometry than with art.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq20" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq20" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq20" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq20" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq20" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>21:</b> I enjoy pictures with bright colours and unusual shapes like the ones in modern art.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq21" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq21" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq21" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq21" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq21" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>22:</b> Sometimes my images are so vivid and persistent that it is difficult to ignore them.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq22" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq22" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq22" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq22" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq22" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>23:</b> When thinking about an abstract concept (e.g., 'a building') I imagine an abstract schematic building in my mind or its blueprint rather than a specific concrete building.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq23" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq23" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq23" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq23" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq23" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>24:</b> My images are more schematic than colourful or pictorial.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq24" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq24" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq24" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq24" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq24" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>25:</b> I can close my eyes and easily picture a scene that I have experienced.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq25" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq25" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq25" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq25" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq25" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>26:</b> I remember everything visually. I can recount what people wore to a dinner and I can talk about the way they sat and the way they looked probably in more detail that I could discuss what they said.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq26" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq26" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq26" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq26" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq26" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>27:</b> I find it difficult to imagine how a 3-dimensional geometric figure would exactly look like when rotated.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq27" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq27" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq27" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq27" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq27" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>28:</b> My visual images are in my head all the time. They are just right there.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq28" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq28" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq28" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq28" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq28" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>29:</b> My graphic abilities would make a career in architecture relatively easy for me.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq29" type="radio" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq29" type="radio" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq29" type="radio" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq29" type="radio" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq29" type="radio" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<b>30:</b> When I hear a radio announcer or a DJ I've never actually seen, I usually find myself picturing what he or she might look like.<br><br>&nbsp;&nbsp;&nbsp;<label><input name="osiq30" type="radio" onclick="enableNext4()" value="1" /> Completely Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq30" type="radio" onclick="enableNext4()" value="2" /> Somewhat Disagree</label> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq30" type="radio" onclick="enableNext4()" value="3" /> Neutral</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq30" type="radio" onclick="enableNext4()" value="4" /> Somewhat Agree</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <label><input name="osiq30" type="radio" onclick="enableNext4()" value="5" /> Completely Agree</label><br/><br><br><br>
+
+<br><br>
+<input type="button" class="next" onclick="GetOsiq(30)" value="Next" id="nextbutton4" disabled="true"></input>
+</font></span></div>
+
+ <!--- Final Questions -->
+<div id="finalquestion" style="display: none" style="font-family:helvetica">
+    <span style="font-size:20px">
+        <center> <br><br><br><br>
+            Prior to this study, how familiar were you with the New York Times Connections Game? 
+            <br><br>
+            <input type="text" name="finalQ" id="finalQout" style="font-size:20px">
+            <br><br>
+            How often would you say you have played this kind of game before?
+            <br><br>
+            <label><input name="finalQ2" type="radio" id="finalQ2out" value="1" /> Extremely frequently</label> <br><br><label><input name="finalQ2" type="radio" value="2" /> Moderately frequently</label><br><br><label><input name="finalQ2" type="radio" value="3" /> Occasionally</label><br><br><label><input name="finalQ2" type="radio" value="4" /> Infrequently</label><br><br><label><input name="finalQ2" type="radio" value="5" /> Never</label><br/>
+            <br><br>
+            When completing this study, were any puzzles familiar to you? If so, which ones? 
+            <br><br>
+            <input type="text" name="finalQ3" id="finalQ3out" style="font-size:20px" oninput="enableNext5()">
+            <br><br>
+            If you have any additional comments about the experiment, please write them here, such as if you looked up the definitions of any words:
+            <input type="text" name="finalQ4" id="finalQ4out" style="font-size:20px">
+            <br><br>
+            <input type="button" class="next" onclick="showEnding()" value="Next" id="nextbutton5" disabled="true"></input>
+        </center>
+    </span>
+</div>
+
+
+<!-- Preload images -->
+<img src = "GAS.jpg" height=0.5 width=0.75>
+<img src = "LIQUID.jpg" height=0.5 width=0.75>
+<img src = "PLASMA.jpg" height=0.5 width=0.75>
+<img src = "SOLID.jpg" height=0.5 width=0.75>
+<img src = "LEGEND.jpg" height=0.5 width=0.75>
+<img src = "ICON.jpg" height=0.5 width=0.75>
+<img src = "HERO.jpg" height=0.5 width=0.75>
+<img src = "GREAT.jpg" height=0.5 width=0.75>
+<img src = "PHISH.jpg" height=0.5 width=0.75>
+<img src = "PHILLY.jpg" height=0.5 width=0.75>
+<img src = "PHEW.jpg" height=0.5 width=0.75>
+<img src = "PHAT.jpg" height=0.5 width=0.75>
+<img src = "PERFECT.jpg" height=0.5 width=0.75>
+<img src = "FEVER.jpg" height=0.5 width=0.75>
+<img src = "ELEVATOR.jpg" height=0.5 width=0.75>
+<img src = "SALES.jpg" height=0.5 width=0.75>
+<img src = "C_GAS.jpg" height=0.5 width=0.75>
+<img src = "C_LIQUID.jpg" height=0.5 width=0.75>
+<img src = "C_PLASMA.jpg" height=0.5 width=0.75>
+<img src = "C_SOLID.jpg" height=0.5 width=0.75>
+<img src = "C_LEGEND.jpg" height=0.5 width=0.75>
+<img src = "C_ICON.jpg" height=0.5 width=0.75>
+<img src = "C_HERO.jpg" height=0.5 width=0.75>
+<img src = "C_GREAT.jpg" height=0.5 width=0.75>
+<img src = "C_PHISH.jpg" height=0.5 width=0.75>
+<img src = "C_PHILLY.jpg" height=0.5 width=0.75>
+<img src = "C_PHEW.jpg" height=0.5 width=0.75>
+<img src = "C_PHAT.jpg" height=0.5 width=0.75>
+<img src = "C_PERFECT.jpg" height=0.5 width=0.75>
+<img src = "C_FEVER.jpg" height=0.5 width=0.75>
+<img src = "C_ELEVATOR.jpg" height=0.5 width=0.75>
+<img src = "C_SALES.jpg" height=0.5 width=0.75>
+<img src = "T_p1g1.jpg" height=0.5 width=0.75>
+<img src = "T_p1g2.jpg" height=0.5 width=0.75>
+<img src = "T_p1g3.jpg" height=0.5 width=0.75>
+<img src = "T_p1g4.jpg" height=0.5 width=0.75>
+
+<img src = "RAIN.jpg" height=0.5 width=0.75>
+<img src = "SLEET.jpg" height=0.5 width=0.75>
+<img src = "HAIL.jpg" height=0.5 width=0.75>
+<img src = "SNOW.jpg" height=0.5 width=0.75>
+<img src = "BUCKS.jpg" height=0.5 width=0.75>
+<img src = "HEAT.jpg" height=0.5 width=0.75>
+<img src = "JAZZ.jpg" height=0.5 width=0.75>
+<img src = "NETS.jpg" height=0.5 width=0.75>
+<img src = "OPTION.jpg" height=0.5 width=0.75>
+<img src = "SHIFT.jpg" height=0.5 width=0.75>
+<img src = "TAB.jpg" height=0.5 width=0.75>
+<img src = "RETURN.jpg" height=0.5 width=0.75>
+<img src = "KAYAK.jpg" height=0.5 width=0.75>
+<img src = "LEVEL.jpg" height=0.5 width=0.75>
+<img src = "MOM.jpg" height=0.5 width=0.75>
+<img src = "RACECAR.jpg" height=0.5 width=0.75>
+<img src = "C_RAIN.jpg" height=0.5 width=0.75>
+<img src = "C_SLEET.jpg" height=0.5 width=0.75>
+<img src = "C_HAIL.jpg" height=0.5 width=0.75>
+<img src = "C_SNOW.jpg" height=0.5 width=0.75>
+<img src = "C_BUCKS.jpg" height=0.5 width=0.75>
+<img src = "C_HEAT.jpg" height=0.5 width=0.75>
+<img src = "C_JAZZ.jpg" height=0.5 width=0.75>
+<img src = "C_NETS.jpg" height=0.5 width=0.75>
+<img src = "C_OPTION.jpg" height=0.5 width=0.75>
+<img src = "C_SHIFT.jpg" height=0.5 width=0.75>
+<img src = "C_TAB.jpg" height=0.5 width=0.75>
+<img src = "C_RETURN.jpg" height=0.5 width=0.75>
+<img src = "C_KAYAK.jpg" height=0.5 width=0.75>
+<img src = "C_LEVEL.jpg" height=0.5 width=0.75>
+<img src = "C_MOM.jpg" height=0.5 width=0.75>
+<img src = "C_RACECAR.jpg" height=0.5 width=0.75>
+<img src = "T_p2g1.jpg" height=0.5 width=0.75>
+<img src = "T_p2g2.jpg" height=0.5 width=0.75>
+<img src = "T_p2g3.jpg" height=0.5 width=0.75>
+<img src = "T_p2g4.jpg" height=0.5 width=0.75>
+
+
+<img src = "ABSORB.jpg" height=0.5 width=0.75>
+<img src = "ENGROSS.jpg" height=0.5 width=0.75>
+<img src = "HOLD.jpg" height=0.5 width=0.75>
+<img src = "RIVET.jpg" height=0.5 width=0.75>
+<img src = "FILM.jpg" height=0.5 width=0.75>
+<img src = "RECORD.jpg" height=0.5 width=0.75>
+<img src = "SHOOT.jpg" height=0.5 width=0.75>
+<img src = "TAPE.jpg" height=0.5 width=0.75>
+<img src = "PASTEL.jpg" height=0.5 width=0.75>
+<img src = "PETALS.jpg" height=0.5 width=0.75>
+<img src = "STAPLE.jpg" height=0.5 width=0.75>
+<img src = "PLEATS.jpg" height=0.5 width=0.75>
+<img src = "PENNY.jpg" height=0.5 width=0.75>
+<img src = "PLEASE.jpg" height=0.5 width=0.75>
+<img src = "GOOD.jpg" height=0.5 width=0.75>
+<img src = "WOMAN.jpg" height=0.5 width=0.75>
+<img src = "C_ABSORB.jpg" height=0.5 width=0.75>
+<img src = "C_ENGROSS.jpg" height=0.5 width=0.75>
+<img src = "C_HOLD.jpg" height=0.5 width=0.75>
+<img src = "C_RIVET.jpg" height=0.5 width=0.75>
+<img src = "C_FILM.jpg" height=0.5 width=0.75>
+<img src = "C_RECORD.jpg" height=0.5 width=0.75>
+<img src = "C_SHOOT.jpg" height=0.5 width=0.75>
+<img src = "C_TAPE.jpg" height=0.5 width=0.75>
+<img src = "C_PASTEL.jpg" height=0.5 width=0.75>
+<img src = "C_PETALS.jpg" height=0.5 width=0.75>
+<img src = "C_STAPLE.jpg" height=0.5 width=0.75>
+<img src = "C_PLEATS.jpg" height=0.5 width=0.75>
+<img src = "C_PENNY.jpg" height=0.5 width=0.75>
+<img src = "C_PLEASE.jpg" height=0.5 width=0.75>
+<img src = "C_GOOD.jpg" height=0.5 width=0.75>
+<img src = "C_WOMAN.jpg" height=0.5 width=0.75>
+<img src = "T_p3g1.jpg" height=0.5 width=0.75>
+<img src = "T_p3g2.jpg" height=0.5 width=0.75>
+<img src = "T_p3g3.jpg" height=0.5 width=0.75>
+<img src = "T_p3g4.jpg" height=0.5 width=0.75>
+
+<img src = "COMPANY.jpg" height=0.5 width=0.75>
+<img src = "AGENCY.jpg" height=0.5 width=0.75>
+<img src = "ENTERPRISE.jpg" height=0.5 width=0.75>
+<img src = "FIRM.jpg" height=0.5 width=0.75>
+<img src = "COOP.jpg" height=0.5 width=0.75>
+<img src = "PEN.jpg" height=0.5 width=0.75>
+<img src = "STABLE.jpg" height=0.5 width=0.75>
+<img src = "STY.jpg" height=0.5 width=0.75>
+<img src = "FLUFFY.jpg" height=0.5 width=0.75>
+<img src = "REX.jpg" height=0.5 width=0.75>
+<img src = "ROVER.jpg" height=0.5 width=0.75>
+<img src = "SPOT.jpg" height=0.5 width=0.75>
+<img src = "INK.jpg" height=0.5 width=0.75>
+<img src = "LACK.jpg" height=0.5 width=0.75>
+<img src = "OLD.jpg" height=0.5 width=0.75>
+<img src = "RANGE.jpg" height=0.5 width=0.75>
+<img src = "C_COMPANY.jpg" height=0.5 width=0.75>
+<img src = "C_AGENCY.jpg" height=0.5 width=0.75>
+<img src = "C_ENTERPRISE.jpg" height=0.5 width=0.75>
+<img src = "C_FIRM.jpg" height=0.5 width=0.75>
+<img src = "C_COOP.jpg" height=0.5 width=0.75>
+<img src = "C_PEN.jpg" height=0.5 width=0.75>
+<img src = "C_STABLE.jpg" height=0.5 width=0.75>
+<img src = "C_STY.jpg" height=0.5 width=0.75>
+<img src = "C_FLUFFY.jpg" height=0.5 width=0.75>
+<img src = "C_REX.jpg" height=0.5 width=0.75>
+<img src = "C_ROVER.jpg" height=0.5 width=0.75>
+<img src = "C_SPOT.jpg" height=0.5 width=0.75>
+<img src = "C_INK.jpg" height=0.5 width=0.75>
+<img src = "C_LACK.jpg" height=0.5 width=0.75>
+<img src = "C_OLD.jpg" height=0.5 width=0.75>
+<img src = "C_RANGE.jpg" height=0.5 width=0.75>
+<img src = "T_p4g1.jpg" height=0.5 width=0.75>
+<img src = "T_p4g2.jpg" height=0.5 width=0.75>
+<img src = "T_p4g3.jpg" height=0.5 width=0.75>
+<img src = "T_p4g4.jpg" height=0.5 width=0.75>
+
+<img src = "BUILD.jpg" height=0.5 width=0.75>
+<img src = "GROW.jpg" height=0.5 width=0.75>
+<img src = "SWELL.jpg" height=0.5 width=0.75>
+<img src = "MOUNT.jpg" height=0.5 width=0.75>
+<img src = "ACES.jpg" height=0.5 width=0.75>
+<img src = "KEEN.jpg" height=0.5 width=0.75>
+<img src = "NEATO.jpg" height=0.5 width=0.75>
+<img src = "NIFTY.jpg" height=0.5 width=0.75>
+<img src = "FOAM.jpg" height=0.5 width=0.75>
+<img src = "FROTH.jpg" height=0.5 width=0.75>
+<img src = "HEAD.jpg" height=0.5 width=0.75>
+<img src = "LATHER.jpg" height=0.5 width=0.75>
+<img src = "BUBBLE.jpg" height=0.5 width=0.75>
+<img src = "GLOBE.jpg" height=0.5 width=0.75>
+<img src = "MARBLE.jpg" height=0.5 width=0.75>
+<img src = "PEARL.jpg" height=0.5 width=0.75>
+<img src = "C_BUILD.jpg" height=0.5 width=0.75>
+<img src = "C_GROW.jpg" height=0.5 width=0.75>
+<img src = "C_SWELL.jpg" height=0.5 width=0.75>
+<img src = "C_MOUNT.jpg" height=0.5 width=0.75>
+<img src = "C_ACES.jpg" height=0.5 width=0.75>
+<img src = "C_KEEN.jpg" height=0.5 width=0.75>
+<img src = "C_NEATO.jpg" height=0.5 width=0.75>
+<img src = "C_NIFTY.jpg" height=0.5 width=0.75>
+<img src = "C_FOAM.jpg" height=0.5 width=0.75>
+<img src = "C_FROTH.jpg" height=0.5 width=0.75>
+<img src = "C_HEAD.jpg" height=0.5 width=0.75>
+<img src = "C_LATHER.jpg" height=0.5 width=0.75>
+<img src = "C_BUBBLE.jpg" height=0.5 width=0.75>
+<img src = "C_GLOBE.jpg" height=0.5 width=0.75>
+<img src = "C_MARBLE.jpg" height=0.5 width=0.75>
+<img src = "C_PEARL.jpg" height=0.5 width=0.75>
+<img src = "T_p5g1.jpg" height=0.5 width=0.75>
+<img src = "T_p5g2.jpg" height=0.5 width=0.75>
+<img src = "T_p5g3.jpg" height=0.5 width=0.75>
+<img src = "T_p5g4.jpg" height=0.5 width=0.75>
+
+<img src = "CLIP.jpg" height=0.5 width=0.75>
+<img src = "CUT.jpg" height=0.5 width=0.75>
+<img src = "PARE.jpg" height=0.5 width=0.75>
+<img src = "TRIM.jpg" height=0.5 width=0.75>
+<img src = "BUILT.jpg" height=0.5 width=0.75>
+<img src = "JACKED.jpg" height=0.5 width=0.75>
+<img src = "RIPPED.jpg" height=0.5 width=0.75>
+<img src = "SWOLE.jpg" height=0.5 width=0.75>
+<img src = "BUFF.jpg" height=0.5 width=0.75>
+<img src = "FAN.jpg" height=0.5 width=0.75>
+<img src = "LOVER.jpg" height=0.5 width=0.75>
+<img src = "NUT.jpg" height=0.5 width=0.75>
+<img src = "BRAIN.jpg" height=0.5 width=0.75>
+<img src = "PRUNE.jpg" height=0.5 width=0.75>
+<img src = "PUG.jpg" height=0.5 width=0.75>
+<img src = "WALNUT.jpg" height=0.5 width=0.75>
+<img src = "C_CLIP.jpg" height=0.5 width=0.75>
+<img src = "C_CUT.jpg" height=0.5 width=0.75>
+<img src = "C_PARE.jpg" height=0.5 width=0.75>
+<img src = "C_TRIM.jpg" height=0.5 width=0.75>
+<img src = "C_BUILT.jpg" height=0.5 width=0.75>
+<img src = "C_JACKED.jpg" height=0.5 width=0.75>
+<img src = "C_RIPPED.jpg" height=0.5 width=0.75>
+<img src = "C_SWOLE.jpg" height=0.5 width=0.75>
+<img src = "C_BUFF.jpg" height=0.5 width=0.75>
+<img src = "C_FAN.jpg" height=0.5 width=0.75>
+<img src = "C_LOVER.jpg" height=0.5 width=0.75>
+<img src = "C_NUT.jpg" height=0.5 width=0.75>
+<img src = "C_BRAIN.jpg" height=0.5 width=0.75>
+<img src = "C_PRUNE.jpg" height=0.5 width=0.75>
+<img src = "C_PUG.jpg" height=0.5 width=0.75>
+<img src = "C_WALNUT.jpg" height=0.5 width=0.75>
+<img src = "T_p6g1.jpg" height=0.5 width=0.75>
+<img src = "T_p6g2.jpg" height=0.5 width=0.75>
+<img src = "T_p6g3.jpg" height=0.5 width=0.75>
+<img src = "T_p6g4.jpg" height=0.5 width=0.75>
+
+<img src = "CLOUD.jpg" height=0.5 width=0.75>
+<img src = "COTTONBALL.jpg" height=0.5 width=0.75>
+<img src = "DANDELION.jpg" height=0.5 width=0.75>
+<img src = "SHEEP.jpg" height=0.5 width=0.75>
+<img src = "GUINEAPIG.jpg" height=0.5 width=0.75>
+<img src = "PARTICIPANT.jpg" height=0.5 width=0.75>
+<img src = "SUBJECT.jpg" height=0.5 width=0.75>
+<img src = "VOLUNTEER.jpg" height=0.5 width=0.75>
+<img src = "DISAPPROVE.jpg" height=0.5 width=0.75>
+<img src = "MIND.jpg" height=0.5 width=0.75>
+<img src = "OBJECT.jpg" height=0.5 width=0.75>
+<img src = "PROTEST.jpg" height=0.5 width=0.75>
+<img src = "BULL.jpg" height=0.5 width=0.75>
+<img src = "FOG.jpg" height=0.5 width=0.75>
+<img src = "MATTER.jpg" height=0.5 width=0.75>
+<img src = "SHOE.jpg" height=0.5 width=0.75>
+<img src = "C_CLOUD.jpg" height=0.5 width=0.75>
+<img src = "C_COTTONBALL.jpg" height=0.5 width=0.75>
+<img src = "C_DANDELION.jpg" height=0.5 width=0.75>
+<img src = "C_SHEEP.jpg" height=0.5 width=0.75>
+<img src = "C_GUINEAPIG.jpg" height=0.5 width=0.75>
+<img src = "C_PARTICIPANT.jpg" height=0.5 width=0.75>
+<img src = "C_SUBJECT.jpg" height=0.5 width=0.75>
+<img src = "C_VOLUNTEER.jpg" height=0.5 width=0.75>
+<img src = "C_DISAPPROVE.jpg" height=0.5 width=0.75>
+<img src = "C_MIND.jpg" height=0.5 width=0.75>
+<img src = "C_OBJECT.jpg" height=0.5 width=0.75>
+<img src = "C_PROTEST.jpg" height=0.5 width=0.75>
+<img src = "C_BULL.jpg" height=0.5 width=0.75>
+<img src = "C_FOG.jpg" height=0.5 width=0.75>
+<img src = "C_MATTER.jpg" height=0.5 width=0.75>
+<img src = "C_SHOE.jpg" height=0.5 width=0.75>
+<img src = "T_p7g1.jpg" height=0.5 width=0.75>
+<img src = "T_p7g2.jpg" height=0.5 width=0.75>
+<img src = "T_p7g3.jpg" height=0.5 width=0.75>
+<img src = "T_p7g4.jpg" height=0.5 width=0.75>
+
+<img src = "T_blank.jpg" height=0.5 width=0.75>
+<img src = "space.jpg" height=0.5 width=0.375>
+
+<!-- Functions! -->
+<script>
+    function viewConsent() {
+        var x = document.getElementById("consent");
+        if (x.style.display === "none") {
+            x.style.display = "block";
+        } else {
+            x.style.display = "none";
+        }
+    }
+
+    function enableNext() {
+	document.getElementById("nextbutton").disabled = false;
+	}
+
+    function enableNextD() {
+	document.getElementById("nextbuttonD").disabled = false;
+	}
+
+	function enableNext3() {
+	document.getElementById("nextbutton3").disabled = false;
+	}
+
+    function enableNext4() {
+	document.getElementById("nextbutton4").disabled = false;
+	}
+
+    function enableNext5() {
+	document.getElementById("nextbutton5").disabled = false;
+	}
+
+    function enableNextButton(){
+    document.getElementById("advanceButton").disabled = false;
+}
+
+    var showing = [1,0,0,0,0,0,0]
+    var pages = ['intro', 'demographics', 'exp', 'vviq', 'osiq', 'finalquestion', 'exp'];
+    function next() {
+        var qElems = [];
+        for (var i = 0; i < pages.length; i++) {
+            qElems.push(document.getElementById(pages[i]));
+        }
+        for (var i = 0; i < showing.length; i++) {
+            if (showing[i] == 1) {
+                qElems[i].style.display = 'none';
+                showing[i] = 0;
+                if (i == showing.length - 1) {
+                    qElems[0].style.display = 'block';
+                    showing[0] = 1;
+                } else {
+                    qElems[i + 1].style.display = 'block';
+                    showing[i + 1] = 1;
+                }
+                break;
+            }
+        }
+    }
+
+    function GetVviq(length){ // Here length refers to how many questions (16 for VVIQ)
+    // Consolidate vviq answers & send data to server
+
+        vviqarray = [];
+        for (var i = 0; index = i < length; i++){
+            question = ["vviq"+(i+1)]; // Try putting 'this' in front of [] if doesn't work
+            vviqarray[i] = $("input[name="+question+"]:checked").val();
+        }
+        document.getElementById("vviqvals").value = vviqarray;
+        showOsiq();
+        }
+
+    // Consolidate osiq answers & send data to server
+    function GetOsiq(length){ // Here length refers to how many questions (30 for OSIQ)
+
+	    osiqarray = [];
+	    for (var i = 0; index = i < length; i++){
+		    question = ["osiq"+(i+1)]; // Try putting 'this' in front of [] if doesn't work
+		    osiqarray[i] = $("input[name="+question+"]:checked").val();
+	    }
+	    document.getElementById("osiqvals").value = osiqarray;
+        showFinalQ();
+        }
+
+    // Declare all characters
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    function generateString(length) {
+        let result = ' ';
+        const charactersLength = characters.length;
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+
+        return result;
+    }
+</script>
+</form></body></html>
